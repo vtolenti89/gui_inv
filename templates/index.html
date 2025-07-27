@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Serial Reader</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body class="p-4">
+    <div class="container">
+        <h1 class="mb-4">Serial COM Port Interface</h1>
+
+        <div class="mb-3">
+            <label for="portSelect" class="form-label">Available COM Ports</label>
+            <select id="portSelect" class="form-select"></select>
+            <button id="connectBtn" class="btn btn-primary mt-2">Connect</button>
+        </div>
+
+        <div class="mb-3 d-none" id="readControls">
+            <button id="readButton" class="btn btn-success">Read</button>
+
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="autoReadCheckbox">
+                <label class="form-check-label" for="autoReadCheckbox">
+                    Auto Read
+                </label>
+            </div>
+
+            <label for="intervalInput" class="form-label mt-2">Interval (ms)</label>
+            <input type="number" id="intervalInput" class="form-control" value="1000" min="100">
+        </div>
+
+        <!-- <pre id="output" class="bg-light p-3 border rounded"></pre> -->
+
+        <div class="mb-3 d-none" id="writeControls">
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="closedLoopCheckbox">
+                <label class="form-check-label" for="closedLoopCheckbox">
+                    Closed Loop
+                </label>
+            </div>
+            <div class="d-none" id="targetCurrentWrapper">
+                <label for="targetCurrent" class="form-label mt-2">Current</label>
+                <input type="number" step="0.1" id="targetCurrent" class="form-control" value="1" min="0" max="6.6">
+                <button id="setCurrentButton" class="btn btn-success">Set Current</button>
+            </div>
+            <div class="targetDutyCycle" id="targetDutyCycleWrapper">
+                <label for="targetDutyCycle" class="form-label mt-2">Duty Cycle</label>
+                <input type="number" step="0.5" id="targetDutyCycle" class="form-control" value="0" min="0" max="100">
+                <button id="setDutyCycle" class="btn btn-success">Set Duty Cycle</button>
+            </div>
+        </div>
+
+        <div class="row mt-4" id="measFields">
+            <div class="col-md-4 mb-3">
+                <label for="inputVoltage" class="form-label text-uppercase small">Input Voltage</label>
+                <input type="text" class="form-control edgy-input" id="inputVoltage" placeholder="-.- V" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="inputCurrent" class="form-label text-uppercase small">Input Current</label>
+                <input type="text" class="form-control edgy-input" id="inputCurrent" placeholder="-.- A" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="outputVoltage" class="form-label text-uppercase small">Output Voltage</label>
+                <input type="text" class="form-control edgy-input" id="outputVoltage" placeholder="-.- V" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="outputCurrent" class="form-label text-uppercase small">Output Current</label>
+                <input type="text" class="form-control edgy-input" id="outputCurrent" placeholder="-.- A" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="dutyCycle" class="form-label text-uppercase small">Duty Cycle</label>
+                <input type="text" class="form-control edgy-input" id="dutyCycle" placeholder="-.- %" readonly>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="inputFrequency" class="form-label text-uppercase small">Output Frequency</label>
+                <input type="text" class="form-control edgy-input" id="inputFrequency" placeholder="-.- %" readonly>
+            </div>
+
+        </div>
+
+        <div class="mt-5">
+            <h4 class="mb-3">Live Graphs</h4>
+            <div id="graphContainer" class="row g-4"></div>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+
+</html>

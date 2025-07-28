@@ -11,79 +11,137 @@
 
 <body class="p-4">
     <div class="container">
-        <h1 class="mb-4">Serial COM Port Interface</h1>
+        <div class="container border border-dark shadow rounded mb-3 p-3">
+            <div class="row">
+                <p class="h2 mb-2 text-center">Serial Interface</p>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="portSelect" class="form-label">Available COM Ports</label>
+                    <select id="portSelect" class="form-select"></select>
+                    <button id="connectBtn" class="btn btn-primary mt-2">Connect</button>
+                </div>
+                <div class="col-md-6">
+                    <fieldset class="mb-3" id="readControls" class="form-control" disabled>
+                        <div class="row mb-1">
+                            <div class="col-md-6">
+                                <button id="readButton" class="btn btn-success">Read</button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="autoReadCheckbox">
+                                    <label class="form-check-label" for="autoReadCheckbox">
+                                        Auto Read
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-1">
+                            <div class="col-md-6">
+                                <label for="intervalInput" class="form-label mt-2">Interval (ms)</label>
+                            </div>
+                            <div class="col-md-6">
+                                <input class="form-control col-md-6" type="number" id="intervalInput"
+                                    class="form-control" value="1000" min="100">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button id="commandButton" class="btn btn-success">Send</button>
+                            </div>
+                            <div class="col-md-6">
+                                <input class="form-control" type="text" id="commandInput" placeholder="command">
+                            </div>
+                        </div>
+                    </fieldset>
 
-        <div class="mb-3">
-            <label for="portSelect" class="form-label">Available COM Ports</label>
-            <select id="portSelect" class="form-select"></select>
-            <button id="connectBtn" class="btn btn-primary mt-2">Connect</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="logCheckbox">
+                        <label class="form-check-label" for="logCheckbox">
+                            Log
+                        </label>
+                    </div>
+                </div>
+                <pre id="outputLog" class="bg-light p-3 border rounded d-none"></pre>
+            </div>
         </div>
 
-        <div class="mb-3 d-none" id="readControls">
-            <button id="readButton" class="btn btn-success">Read</button>
 
-            <div class="form-check mt-2">
-                <input class="form-check-input" type="checkbox" id="autoReadCheckbox">
-                <label class="form-check-label" for="autoReadCheckbox">
-                    Auto Read
-                </label>
+
+
+        <fieldset class="container border border-dark shadow mb-3 p-3 rounded" disabled id="writeControls">
+            <p class="h2 mb-2 text-center">Control</p>
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="closedLoopCheckbox">
+                        <label class="form-check-label" for="closedLoopCheckbox">
+                            Closed Loop
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-10">
+                    <fieldset class="row form-inline mb-2" disabled id="targetCurrentWrapper">
+                        <div class="input-group">
+                            <label for="targetCurrent" class="form-label col-md-4">Current</label>
+                            <input type="number" step="0.1" id="targetCurrent" class=" form-control col-md-4" value="1"
+                                min="0" max="6.6">
+                            <button id="setCurrentButton" class="btn btn-success col-md-4">Set Current</button>
+                        </div>
+                    </fieldset>
+                    <fieldset class="row form-inline" id="targetDutyCycleWrapper">
+                        <div class="input-group">
+                            <label for="targetDutyCycle" class="form col-md-4">Duty Cycle</label>
+                            <input type="number" step="0.5" id="targetDutyCycle" class="form-control col-md-4" value="0"
+                                min="0" max="100">
+                            <button id="setDutyCycle" class="btn btn-success col-md-4">Set Duty Cycle</button>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="container border border-dark shadow mb-3 p-3 rounded" id="measFields">
+            <div class="row">
+                <p class="h2 mb-2 text-center">Measurements</p>
+            </div>
+            <div class="row">
+                <div class="col-md-2 mb-3">
+                    <label for="inputVoltage" class="form-label text-uppercase small">Input Voltage</label>
+                    <input type="text" class="form-control edgy-input" id="inputVoltage" placeholder="-.- V" readonly>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="inputCurrent" class="form-label text-uppercase small">Input Current</label>
+                    <input type="text" class="form-control edgy-input" id="inputCurrent" placeholder="-.- A" readonly>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="outputVoltage" class="form-label text-uppercase small">Output Voltage</label>
+                    <input type="text" class="form-control edgy-input" id="outputVoltage" placeholder="-.- V" readonly>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="outputCurrent" class="form-label text-uppercase small">Output Current</label>
+                    <input type="text" class="form-control edgy-input" id="outputCurrent" placeholder="-.- A" readonly>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="dutyCycle" class="form-label text-uppercase small">Duty Cycle</label>
+                    <input type="text" class="form-control edgy-input" id="dutyCycle" placeholder="-.- %" readonly>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="inputFrequency" class="form-label text-uppercase small">Output Frequency</label>
+                    <input type="text" class="form-control edgy-input" id="inputFrequency" placeholder="-.- %" readonly>
+                </div>
             </div>
 
-            <label for="intervalInput" class="form-label mt-2">Interval (ms)</label>
-            <input type="number" id="intervalInput" class="form-control" value="1000" min="100">
-        </div>
+        </fieldset>
 
-        <!-- <pre id="output" class="bg-light p-3 border rounded"></pre> -->
-
-        <div class="mb-3 d-none" id="writeControls">
-            <div class="form-check mt-2">
-                <input class="form-check-input" type="checkbox" id="closedLoopCheckbox">
-                <label class="form-check-label" for="closedLoopCheckbox">
-                    Closed Loop
-                </label>
+        <div class="container border border-dark shadow mb-3 p-3 rounded">
+            <div class="row">
+                <p class="h2 mb-2 text-center">Live Graphs</p>
             </div>
-            <div class="d-none" id="targetCurrentWrapper">
-                <label for="targetCurrent" class="form-label mt-2">Current</label>
-                <input type="number" step="0.1" id="targetCurrent" class="form-control" value="1" min="0" max="6.6">
-                <button id="setCurrentButton" class="btn btn-success">Set Current</button>
-            </div>
-            <div class="targetDutyCycle" id="targetDutyCycleWrapper">
-                <label for="targetDutyCycle" class="form-label mt-2">Duty Cycle</label>
-                <input type="number" step="0.5" id="targetDutyCycle" class="form-control" value="0" min="0" max="100">
-                <button id="setDutyCycle" class="btn btn-success">Set Duty Cycle</button>
-            </div>
-        </div>
-
-        <div class="row mt-4" id="measFields">
-            <div class="col-md-4 mb-3">
-                <label for="inputVoltage" class="form-label text-uppercase small">Input Voltage</label>
-                <input type="text" class="form-control edgy-input" id="inputVoltage" placeholder="-.- V" readonly>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="inputCurrent" class="form-label text-uppercase small">Input Current</label>
-                <input type="text" class="form-control edgy-input" id="inputCurrent" placeholder="-.- A" readonly>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="outputVoltage" class="form-label text-uppercase small">Output Voltage</label>
-                <input type="text" class="form-control edgy-input" id="outputVoltage" placeholder="-.- V" readonly>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="outputCurrent" class="form-label text-uppercase small">Output Current</label>
-                <input type="text" class="form-control edgy-input" id="outputCurrent" placeholder="-.- A" readonly>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="dutyCycle" class="form-label text-uppercase small">Duty Cycle</label>
-                <input type="text" class="form-control edgy-input" id="dutyCycle" placeholder="-.- %" readonly>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="inputFrequency" class="form-label text-uppercase small">Output Frequency</label>
-                <input type="text" class="form-control edgy-input" id="inputFrequency" placeholder="-.- %" readonly>
-            </div>
-
-        </div>
-
-        <div class="mt-5">
-            <h4 class="mb-3">Live Graphs</h4>
             <div id="graphContainer" class="row g-4"></div>
         </div>
 

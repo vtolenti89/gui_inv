@@ -8,6 +8,8 @@ var tempHB1;
 var tempHB2;
 var tempPCB1;
 var tempPCB2;
+var tempHeatsink;
+var tempTrafo;
 var mainsFrequency = null;
 var dutyCycle = null;
 
@@ -56,12 +58,14 @@ $(document).ready(function () {
                 if (data.success) {
                     //alert("Connected!");
                     // isConencted = true
-                    $('#readControls').removeClass('d-none');
-                    $('#writeControls').removeClass('d-none');
+                    // $('#readControls').removeClass('d-none');
+                    // $('#currentControl').removeClass('d-none');
+                    $('#readControls').prop('disabled', false);
+                    $('#currentControl').prop('disabled', false)
                     $('#portSelect').prop('disabled', true);
                 } else {
                     alert("Connection failed: " + data.error);
-                    $('#readButton').addClass('d-none');
+                    $('#readButton').prop('disabled', true);
                 }
             }
         });
@@ -69,11 +73,20 @@ $(document).ready(function () {
 
     $('#closedLoopCheckbox').on('change', function () {
         if (this.checked) {
-            $('#targetCurrentWrapper').removeClass('d-none');
-            $('#targetDutyCycleWrapper').addClass('d-none');
+            $('#targetCurrentWrapper').prop('disabled', false);
+            $('#targetDutyCycleWrapper').prop('disabled', true);
         } else {
-            $('#targetCurrentWrapper').addClass('d-none');
-            $('#targetDutyCycleWrapper').removeClass('d-none');
+            $('#targetCurrentWrapper').prop('disabled', true);
+            $('#targetDutyCycleWrapper').prop('disabled', false);
+        }
+    })
+
+    $('#logCheckbox').on('change', function () {
+        if (this.checked) {
+            $('#outputLog').removeClass('d-none')
+        } else {
+            $('#outputLog').removeClass('d-none')
+
         }
     })
 
@@ -96,6 +109,13 @@ $(document).ready(function () {
 
             }
         }
+    });
+
+    // Handle read button click
+    $('#commandButton').on('click', function () {
+
+        // Always read once immediately
+        writeSerialData();
     });
 
     $('#setCurrentButton').on('click', function () {
@@ -131,7 +151,7 @@ $(document).ready(function () {
 
     // Function to read serial data
     function readSerialData() {
-        $.get("/read", function (response) {
+        $.get("/pool_measurement", function (response) {
             const output = $('#output');
             if (response.success) {
                 try {
@@ -145,6 +165,29 @@ $(document).ready(function () {
                 }
             } else {
                 output.text("Error: " + response.error);
+            }
+        });
+    }
+
+    function writeSerialData() {
+        const data = parseInt($('#commandInput').val());
+
+        if (!data) {
+            return;
+        }
+
+        $.ajax({
+            url: '/write',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ data }),
+            success: function (response) {
+                if (response.success) {
+                    readSerialData();
+                } else {
+                    alert("Current coulkd not be set.")
+                    console.log("Error: " + response.error);
+                }
             }
         });
     }
@@ -191,15 +234,25 @@ $(document).ready(function () {
         buffer.push(newItem); // Add the newest item
     }
 
-    function createGraph(id, title, labelX = "X", labelY = "Y") {
+    function createGraph(id, title, labelX = "X", labelY = "Y", datasets = [], options = { widthMCol: 6 }) {
         const canvasId = `graph-${id}`;
 
         // Append canvas element
         $('#graphContainer').append(`
-        <div class="col-md-6">
+        <div class="col-md-${options.widthMCol}">
             <canvas id="${canvasId}" height="250"></canvas>
         </div>
     `);
+        // Build datasets dynamically
+        const chartDatasets = datasets.map((dataset, index) => ({
+            label: dataset.label || `Curve ${index + 1}`,
+            data: [],
+            borderColor: dataset.borderColor || `#${Math.floor(Math.random() * 16777215).toString(16)}`, // Random color
+            backgroundColor: dataset.backgroundColor || 'rgba(0,123,255,0.1)',
+            fill: dataset.fill || true,
+            tension: dataset.tension || 0.4,
+            pointRadius: dataset.pointRadius || 3
+        }));
 
         // Create Chart.js instance
         const ctx = document.getElementById(canvasId).getContext('2d');
@@ -207,15 +260,7 @@ $(document).ready(function () {
             type: 'line',
             data: {
                 labels: [],
-                datasets: [{
-                    label: `${labelY} vs ${labelX}`,
-                    data: [],
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0,123,255,0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 3
-                }]
+                datasets: chartDatasets // Use dynamically created datasets
             },
             options: {
                 responsive: true,
@@ -231,6 +276,21 @@ $(document).ready(function () {
                         padding: {
                             top: 10,
                             bottom: 20
+                        }
+                    },
+                    legend: {
+                        display: true, // Show the legend
+                        labels: {
+                            font: {
+                                size: 12
+                            }
+                        },
+                        onClick: (e, legendItem) => {
+                            // Toggle visibility of datasets
+                            const datasetIndex = legendItem.datasetIndex;
+                            const meta = chart.getDatasetMeta(datasetIndex);
+                            meta.hidden = !meta.hidden; // Toggle visibility
+                            chart.update();
                         }
                     }
                 },
@@ -253,17 +313,23 @@ $(document).ready(function () {
     }
 
     // Update existing graph with new point
-    function updateGraph(id, x, y, maxPoints = 500) {
+    function updateGraph(id, x, yValues, maxPoints = 500) {
         const chart = graphRegistry[id];
         if (!chart) return;
 
+        // Add new label (X value)
         chart.data.labels.push(x);
-        chart.data.datasets[0].data.push(y);
 
-        // Limit to last `maxPoints` samples
+        // Add new data points (Y values) to corresponding datasets
+        chart.data.datasets.forEach((dataset, index) => {
+            const yValue = yValues[index]; // Y value for this dataset
+            dataset.data.push(yValue);
+        });
+
+        // Limit to last `maxPoints` samples for all datasets
         if (chart.data.labels.length > maxPoints) {
             chart.data.labels.shift(); // Remove oldest label
-            chart.data.datasets[0].data.shift(); // Remove oldest data point
+            chart.data.datasets.forEach((dataset) => dataset.data.shift()); // Remove oldest data point
         }
 
         chart.update();
@@ -271,28 +337,49 @@ $(document).ready(function () {
 
     function updateGraphs() {
         const time = new Date().toLocaleTimeString(); // or use a counter
-        console.log("Updatieng graphs with", time, inputVoltage);
-        updateGraph('inputVoltageVsTime', time, inputVoltage);
-        updateGraph('inputCurrentVsTime', time, inputCurrent);
-        updateGraph('outputVoltageVsTime', time, outputVoltage);
-        updateGraph('outputCurrentVsTime', time, outputCurrent);
-        updateGraph('temperatureHB1VsTime', time, tempHB1);
-        updateGraph('temperatureHB2VsTime', time, tempHB2);
-        updateGraph('temperaturePCB1VsTime', time, tempPCB1);
-        updateGraph('temperaturePCB21VsTime', time, tempPCB2);
+        console.log("Updatieng graphs with", time, [inputVoltage]);
+        updateGraph('inputVoltageVsTime', time, [inputVoltage]);
+        updateGraph('inputCurrentVsTime', time, [inputCurrent]);
+        updateGraph('outputVoltageVsTime', time, [outputVoltage]);
+        updateGraph('outputCurrentVsTime', time, [outputCurrent]);
+        updateGraph('temperatureVsTime', time, [tempHB1, tempHB2, tempPCB1, tempPCB2, tempHeatsink, tempTrafo]);
 
 
     }
 
     function createGraphs() {
-        createGraph("inputVoltageVsTime", "Input Voltage", "Time [s]", "Voltage (V)");
-        createGraph("inputCurrentVsTime", "Input Current", "Time [s]", "Current (V)");
-        createGraph("outputVoltageVsTime", "Output Voltage", "Time [s]", "Voltage (V)");
-        createGraph("outputCurrentVsTime", "Output Current", "Time [s]", "Current (V)");
-        createGraph("temperatureHB1VsTime", "Temperature H Bridge 1", "Time [s]", "Temperature (°C)");
-        createGraph("temperatureHB2VsTime", "Temperature H Bridge 2", "Time [s]", "Temperature (°C)");
-        createGraph("temperaturePCB1VsTime", "Temperature PCB 1", "Time [s]", "Temperature (°C)");
-        createGraph("temperaturePCB21VsTime", "Temperature PCB 2", "Time [s]", "Temperature (°C)");
+        createGraph("inputVoltageVsTime", "Input Voltage", "Time [s]", "Voltage (V)",
+            [
+                { label: 'Input Voltage', borderColor: 'blue', backgroundColor: 'rgba(0, 0, 255, 0.1)', }
+            ],
+        );
+        createGraph("inputCurrentVsTime", "Input Current", "Time [s]", "Current (V)",
+            [
+                { label: 'Input Current', borderColor: 'blue', backgroundColor: 'rgba(0, 0, 255, 0.1)' }
+            ]
+        );
+        createGraph("outputVoltageVsTime", "Output Voltage", "Time [s]", "Voltage (V)",
+            [
+                { label: 'Output Voltage', borderColor: 'blue', backgroundColor: 'rgba(0, 0, 255, 0.1)' }
+            ]
+        );
+        createGraph("outputCurrentVsTime", "Output Current", "Time [s]", "Current (V)",
+            [
+                { label: 'Output Current', borderColor: 'blue', backgroundColor: 'rgba(0, 0, 255, 0.1)' }
+            ]
+        );
+        createGraph("temperatureVsTime", "Temperature H Bridge 1", "Time [s]", "Temperature (°C)",
+            [{ label: 'HB/SiC 1', borderColor: 'blue', backgroundColor: 'rgba(0, 0, 255, 0.1)' },
+            { label: 'HB/SiC 2', borderColor: 'red', backgroundColor: 'rgba(0, 0, 255, 0.1)' },
+            { label: 'PCB 1', borderColor: 'green', backgroundColor: 'rgba(0, 0, 255, 0.1)' },
+            { label: 'PCB 2', borderColor: 'yellow', backgroundColor: 'rgba(0, 0, 255, 0.1)' },
+            { label: 'Heatsink', borderColor: 'orange', backgroundColor: 'rgba(0, 0, 255, 0.1)' },
+            { label: 'Transformer', borderColor: 'purple', backgroundColor: 'rgba(0, 0, 255, 0.1)' },
+            ],
+            {
+                widthMCol: 12
+            }
+        );
 
     }
 });

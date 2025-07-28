@@ -39,6 +39,19 @@ def read_data():
     if serial_connection and serial_connection.is_open:
         try:
             with lock:
+                data = serial_connection.readline().decode('utf-8').strip()
+            return jsonify({"success": True, "data": data})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)})
+    return jsonify({"success": False, "error": "Not connected"})
+
+
+@app.route('/pool_measurement', methods=['GET'])
+def pool_measurement():
+    global serial_connection
+    if serial_connection and serial_connection.is_open:
+        try:
+            with lock:
                 serial_connection.write(b'pool_measurement\n')
                 time.sleep(1)
                 data = serial_connection.readline().decode('utf-8').strip()
@@ -56,6 +69,22 @@ def set_current():
     if serial_connection and serial_connection.is_open:
         try:
             command = f"set_current {current}\n"
+            with lock:
+                serial_connection.write(command.encode('utf-8'))
+            return jsonify({"success": True})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)})
+    return jsonify({"success": False, "error": "Not connected to serial port"})
+
+@app.route('/write', methods=['POST'])
+def write_data():
+    global serial_connection
+    data = request.get_json()
+    write_data = data.get('data')
+
+    if serial_connection and serial_connection.is_open:
+        try:
+            command = f"{write_data}\n"
             with lock:
                 serial_connection.write(command.encode('utf-8'))
             return jsonify({"success": True})

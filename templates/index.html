@@ -58,7 +58,7 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-12 mb-2">
                     <div class="form-check mt-2">
                         <input class="form-check-input" type="checkbox" id="logCheckbox">
                         <label class="form-check-label" for="logCheckbox">
@@ -66,7 +66,9 @@
                         </label>
                     </div>
                 </div>
-                <pre id="outputLog" class="bg-light p-3 border rounded d-none"></pre>
+                <div class="col-12">
+                    <pre id="outputLog" class="bg-light p-3 border rounded d-none"></pre>
+                </div>
             </div>
         </div>
 
@@ -98,11 +100,16 @@
                             <label for="targetDutyCycle" class="form col-md-4">Duty Cycle</label>
                             <input type="number" step="0.5" id="targetDutyCycle" class="form-control col-md-4" value="0"
                                 min="0" max="100">
-                            <button id="setDutyCycle" class="btn btn-success col-md-4">Set Duty Cycle</button>
+                            <button id="setDutyCycleButton" class="btn btn-success col-md-4">Set Duty Cycle</button>
                         </div>
                     </fieldset>
                 </div>
             </div>
+            <fieldset class="row form-inline mt-4">
+                <div class="input-group">
+                    <button id="stopButton" class="btn btn-danger col-md-12">Stop</button>
+                </div>
+            </fieldset>
         </fieldset>
 
         <fieldset class="container border border-dark shadow mb-3 p-3 rounded" id="measFields">
@@ -131,11 +138,49 @@
                     <input type="text" class="form-control edgy-input" id="dutyCycle" placeholder="-.- %" readonly>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="inputFrequency" class="form-label text-uppercase small">Output Frequency</label>
+                    <label for="inputFrequency" class="form-label text-uppercase small">Input Frequency</label>
                     <input type="text" class="form-control edgy-input" id="inputFrequency" placeholder="-.- %" readonly>
                 </div>
             </div>
 
+        </fieldset>
+
+        <fieldset class="container border border-dark shadow mb-3 p-3 rounded" id="statusFault">
+            <div class="row">
+                <p class="h2 mb-2 text-center">Status</p>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="row">
+                        <p class="h4 mb-2 text-center">Feedback</p>
+                    </div>
+                    <div id="statusContainer">
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="door_sw">Door Switch</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="cutout">Cutout</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="cont1">Contactor 1</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="cont2">Contactor 2</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="hb1_rdy">H Bridge 1 ready</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="hb2_rdy">H Bridge 2 ready</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="hb_sf_en">H Bridge Safe Enable</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row">
+                        <p class="h4 mb-2 text-center">Faults</p>
+                    </div>
+                    <div id="faultContainer">
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="mains_udv">Mains Undervoltage</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="bus_ovv">Bus Overvoltage</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="ovc1">Overcurrent 1</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="ovc2">Overcurrent 2</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="hb1_flt">H Bridge 1 Fault</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="hb2_flt">H Bridge 2 Fault</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="hb1_ovt">H Bridge 1 Over Temp</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="hb2_ov2">H Bridge 2 Over Temp</span>
+                        <span class="badge rounded-pill bg-light text-dark shadow-lg" id="comm_flt">Communication Fault</span>
+                    </div>
+                </div>
+            </div>
         </fieldset>
 
         <div class="container border border-dark shadow mb-3 p-3 rounded">

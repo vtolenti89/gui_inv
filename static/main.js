@@ -13,6 +13,24 @@ var tempTrafo;
 var mainsFrequency = null;
 var dutyCycle = null;
 
+var mainsFrequency = null;
+var mainsUndervoltage = null;
+var busOvervoltage = null;
+var overcurrent1 = null;
+var overcurrent2 = null;
+var hb1Fault = null;
+var hb2Fault = null;
+var hb1OVT = null;
+var hb2OVT = null;
+var commFault = null;
+var doorSwitch = null;
+var cutout = null;
+var contactor1 = null; 
+var contactor2 = null;
+var hb1Ready = null;
+var hb2Ready = null;
+var hbSafeEnable = null;
+
 const graphRegistry = {};
 
 $(document).ready(function () {
@@ -85,7 +103,7 @@ $(document).ready(function () {
         if (this.checked) {
             $('#outputLog').removeClass('d-none')
         } else {
-            $('#outputLog').removeClass('d-none')
+            $('#outputLog').addClass('d-none')
 
         }
     })
@@ -141,6 +159,45 @@ $(document).ready(function () {
         });
     });
 
+
+    $('#setDutyCycleButton').on('click', function () {
+        const targetDutyCycle = parseInt($('#targetDutyCycle').val()) / 100;
+
+        if (targetDutyCycle < 0 || targetDutyCycle > 1) {
+            return;
+        }
+
+        $.ajax({
+            url: '/set_duty_cycle',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ dutyCycle: targetDutyCycle }),
+            success: function (response) {
+                if (response.success) {
+                    readSerialData();
+                } else {
+                    alert("Duty Cycle could not be set.")
+                    console.log("Error: " + response.error);
+                }
+            }
+        });
+    });
+
+    $('#stopButton').on('click', function () {
+        $.get("/stop", function (response) {
+            if (response.success) {
+                try {
+                    updateMeasurement(json)
+                } catch (err) {
+                    console.log(err)
+                    output.text("CR cannot be stopped.\n");
+                }
+            } else {
+                output.text("Error: " + response.error);
+            }
+        });
+    });
+
     // Stop interval when checkbox is unchecked
     $('#autoReadCheckbox').on('change', function () {
         if (!this.checked) {
@@ -151,7 +208,7 @@ $(document).ready(function () {
 
     // Function to read serial data
     function readSerialData() {
-        $.get("/pool_measurement", function (response) {
+        $.get("/pool_status", function (response) {
             const output = $('#output');
             if (response.success) {
                 try {
@@ -211,8 +268,27 @@ $(document).ready(function () {
         tempHB2 = data.t_hb2;
         tempPCB1 = data.t_pcb1;
         tempHB2 = data.t_pcb2;
+        tempHeatsink = data.t_hs;
+        tempTrafo = data.t_tf;
         mainsFrequency = data.f_mains;
         dutyCycle = data.dc;
+        mainsUndervoltage = data.mains_udv;
+        busOvervoltage = data.bus_ovv;
+        overcurrent1 = data.ovc1;
+        overcurrent2 = data.ovc2;
+        hb1Fault = data.hb1_fault;
+        hb2Fault = data.hb2_fault;
+        hb1OVT = data.hb1_ovt;
+        hb2OVT = data.hb2_ovt;
+        commFault = data.com_fault;
+        doorSwitch = data.door_sw;
+        cutout = data.cutout;
+        contactor1 = data.cont1;
+        contactor2 = data.cont2;
+        hb1Ready = data.hb1_rdy;
+        hb2Ready = data.hb2_rdy;
+        hbSafeEnable = data.hb_sf_en;
+
         updateDOM();
     }
 
@@ -223,8 +299,50 @@ $(document).ready(function () {
         $('#outputCurrent').val(outputCurrent + 'A')
         $('#inputFrequency').val(mainsFrequency + ' Hz')
         $('#dutyCycle').val(dutyCycle * 100 + ' %')
-
+        
+        updateStatus();
         updateGraphs();
+    }
+
+    function updateStatus() {
+        updateStatusBadge('door_sw', doorSwitch);
+        updateStatusBadge('cutout', cutout);
+        updateStatusBadge("cont1", contactor1);
+        updateStatusBadge("cont2", contactor2);
+        updateStatusBadge("hb1_rdy", hb1Ready);
+        updateStatusBadge("hb2_rdy", hb2Ready);
+        updateStatusBadge("hb_sf_en", hbSafeEnable);
+        updateFaultBadge("mains_udv", mainsUndervoltage);
+        updateFaultBadge("bus_ovv", busOvervoltage);
+        updateFaultBadge("ovc1", overcurrent1);
+        updateFaultBadge("ovc2", overcurrent2);
+        updateFaultBadge("hb1_flt", hb1Fault);
+        updateFaultBadge("hb2_flt", hb2Fault);
+        updateFaultBadge("hb1_ovt", hb1OVT);
+        updateFaultBadge("hb2_ovt", hb2OVT);
+        updateFaultBadge("comm_flt", commFault);
+    }
+
+    function updateStatusBadge(id, status) {
+        if(status) {
+            $("#" + id).addClass("bg-success");
+            $("#" + id).removeClass("bg-light text-dark");
+        } else {
+            $("#" + id).removeClass("bg-success");
+            $("#" + id).addClass("bg-light text-dark");
+        }
+
+    }
+
+    function updateFaultBadge(id, status) {
+        if(status) {
+            $("#" + id).addClass("bg-danger");
+            $("#" + id).removeClass("bg-light text-dark");
+        } else {
+            $("#" + id).removeClass("bg-danger");
+            $("#" + id).addClass("bg-light text-dark");
+        }
+
     }
 
     function addToBuffer(buffer, newItem) {
@@ -233,6 +351,8 @@ $(document).ready(function () {
         }
         buffer.push(newItem); // Add the newest item
     }
+
+
 
     function createGraph(id, title, labelX = "X", labelY = "Y", datasets = [], options = { widthMCol: 6 }) {
         const canvasId = `graph-${id}`;
